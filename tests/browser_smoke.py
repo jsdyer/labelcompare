@@ -43,7 +43,8 @@ def main():
                     page.locator('#add-product').click()
                     page.locator('#status').filter(has_text='Source records can differ').wait_for()
                     assert page.locator('.product-card').count()==1
-                    assert 'Live lookup' in page.locator('.product-card').inner_text()
+                    assert page.locator('.product-card .origin').inner_text().strip().casefold()=='live lookup'
+                    assert page.locator('.product-card').get_attribute('data-barcode')==response['product']['code']
                     with page.expect_download() as download:
                         page.locator('#export-json').click()
                     receipt=json.loads(Path(download.value.path()).read_text())

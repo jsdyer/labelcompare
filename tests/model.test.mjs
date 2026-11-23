@@ -1,21 +1,20 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cleanLines } from '../web/model.mjs';
-test('trims, removes blanks and preserves first-seen order', () => {
-  assert.deepEqual(cleanLines('  Halifax\nLangley\nHalifax\n\nVancouver  '), {
-    text: 'Halifax\nLangley\nVancouver', count: 3, removed: 1,
-  });
-});
-test('supports Windows and old Mac line endings', () => {
-  assert.equal(cleanLines('a\r\nb\ra').text, 'a\nb');
-});
-test('empty text and whitespace produce an empty result', () => {
-  assert.deepEqual(cleanLines(' \n\t'), { text: '', count: 0, removed: 0 });
-});
-test('preserves case and Unicode', () => {
-  assert.equal(cleanLines('Québec\nquébec\n東京\nQuébec').text, 'Québec\nquébec\n東京');
-});
-test('treats markup as ordinary text', () => {
-  assert.equal(cleanLines('<script>alert(1)</script>\n<script>alert(1)</script>').text, '<script>alert(1)</script>');
-});
-test('rejects non-text input', () => { assert.throws(() => cleanLines(null), TypeError); });
+import {readFileSync} from 'node:fs';
+import {barcode,identity,normalize,NUTRIENTS,amount,basisUnit,comparisonNote,validateConfig,validateReceipt,csv,productURL} from '../web/model.mjs';
+const fixture=JSON.parse(readFileSync(new URL('../web/data/examples.json',import.meta.url)));
+const config=JSON.parse(readFileSync(new URL('../web/config.json',import.meta.url)));
+const base=()=>({status:'success',product:{code:'12345678',product_name:'Test food',serving_size:'30 g',product_quantity_unit:'g',nutriments:{fat_100g:0,fat_serving:0,sodium_100g:.2}}});
+test('barcodes preserve leading zeros and accept spacing but reject URL/control syntax',()=>{assert.equal(barcode('0 69000-019832'),'069000019832');assert.equal(identity('0069000019832'),identity('069000019832'));assert.throws(()=>barcode('https://example.com'));assert.throws(()=>barcode('1234'));});
+test('missing nutrient is not zero, and explicit zero survives',()=>{const p=normalize(base(),'2026-01-01');assert.equal(amount(p,NUTRIENTS.find(n=>n.id==='fat')),0);assert.equal(amount(p,NUTRIENTS.find(n=>n.id==='sugars')),null);});
+test('standardized sodium grams convert to mg without using raw input unit',()=>{const raw=base();raw.product.nutriments.sodium_unit='mg';assert.equal(amount(normalize(raw,'2026-01-01'),NUTRIENTS.find(n=>n.id==='sodium')),200);});
+test('serving requires an actual description and never derives missing values',()=>{let raw=base();delete raw.product.serving_size;assert.equal(amount(normalize(raw,'2026-01-01'),NUTRIENTS[1],'serving'),null);assert.equal(amount(normalize(base(),'2026-01-01'),NUTRIENTS[7],'serving'),null);});
+test('explicit liquid nutrition basis overrides contradictory package mass',()=>{assert.equal(basisUnit({nutrition_data_per:'100ml',product_quantity_unit:'g'}),'mL');assert.equal(basisUnit({nutrition_data_per:'100g'}),null);assert.equal(basisUnit({serving_size:'1 bottle (355 ml)'}),'mL');});
+test('mixed or unknown mass-volume basis is disclosed',()=>{assert.match(comparisonNote([{basisUnit:'g'},{basisUnit:'mL'}],'per100'),/mixes/);assert.match(comparisonNote([{basisUnit:null}],'per100'),/do not establish/);assert.match(comparisonNote([], 'serving'),/sizes differ/);});
+test('source markup is data and untrusted image URLs never become links',()=>{const raw=base();raw.product.product_name='<img src=x onerror=alert(1)>';raw.product.image_front_small_url='javascript:alert(1)';const p=normalize(raw,'2026-01-01');assert.equal(p.name,raw.product.product_name);assert.equal(p.image,null);assert.match(p.source,/^https:\/\/world.openfoodfacts.org\/product\/12345678$/);});
+test('empty allergen fields remain unknown, never a free-from claim',()=>{const p=normalize(base(),'2026-01-01');assert.deepEqual(p.allergens,[]);assert.deepEqual(p.traces,[]);});
+test('receipt validation accepts real baseline and rejects duplicate UPC aliases',()=>{assert.equal(validateReceipt(fixture,24).length,fixture.records.length);const dupe={...fixture,records:[fixture.records[0],fixture.records[0]]};assert.throws(()=>validateReceipt(dupe,24),/duplicate/);assert.throws(()=>validateReceipt({...fixture,tool:'other'},24));});
+test('capacity and starter shelf can expand without changing app code or fixed fixture assertions',()=>{const expanded={...config,maxProducts:8,exampleBarcodes:[...config.exampleBarcodes,'3017620422003'],initialBarcodes:[...config.initialBarcodes,'3017620422003']};assert.equal(validateConfig(expanded).maxProducts,8);assert.equal(validateConfig(expanded).initialBarcodes.length,config.initialBarcodes.length+1);assert.doesNotThrow(()=>validateConfig({...config,exampleBarcodes:[],initialBarcodes:[]}));});
+test('unsafe request budgets and duplicate example aliases are rejected',()=>{assert.throws(()=>validateConfig({...config,requestsPerMinute:100}));assert.throws(()=>validateConfig({...config,requestIntervalMs:10}));assert.throws(()=>validateConfig({...config,exampleBarcodes:['069000019832','0069000019832']}));});
+test('lookup accepts barcodes outside starter configuration and identifies the app',()=>{const url=new URL(productURL('3017620422003'));assert.equal(url.pathname,'/api/v3/product/3017620422003');assert.match(url.searchParams.get('User-Agent'),/CoolCode-LabelCompare/);});
+test('CSV has units, qualifiers, source licence and formula-safe product text',()=>{const raw=base();raw.product.product_name='=1+1';raw.product.nutriments.sodium_modifier='<';const output=csv([normalize(raw,'2026-01-01')],'per100');assert.match(output,/Sodium \(mg\)/);assert.match(output,/"'=1\+1"/);assert.match(output,/,"200","<"$/);assert.match(output,/Open Food Facts contributors/);});

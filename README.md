@@ -1,116 +1,75 @@
-# CoolCode browser tool template
+# Label Compare
 
-A starting point for independent tools at `coolcode.ca/<repo>/`: a working local-text
-example, responsive UI, Python standard-library build, Node tests, PR checks and Pages
-publication. No npm install is needed.
-
-## Using the example
+A public browser tool for comparing food labels by barcode. [Open Label Compare](https://coolcode.ca/labelcompare/).
 
 <!-- coolcode:guide -->
-The first occurrence of each trimmed line keeps its place. Compare the output with the original text before copying the result.
+Enter any food barcode to compare nutrition, ingredients and reported allergens. Switch between source-normalized 100 g/mL and each product’s own serving, then save a dated JSON receipt to reopen later; missing fields never become zero or an allergy-free claim.
 <!-- /coolcode:guide -->
 
-For a real tool, replace this paragraph with one or two plain-text sentences
-about an example, a limit or how to interpret the results. Keep the source,
-coverage, refresh behaviour and a worked example in this README as appropriate.
-When updating a tool, revise any details its behaviour has changed and keep the
-homepage's shorter data-source sentence in `tool.json` accurate.
-The hub imports the marked note into the catalogue README.
+## Use it
 
-## One-time template setup
+The opening comparison contains real, dated Open Food Facts beverage records, including a Diet Pepsi record listing Canada. These are convenient starting points, not an allowlist. Enter an 8–14 digit barcode from your own package and choose **Find & add product**. Spaces and hyphens are accepted; UPC leading-zero aliases refer to the same product. Remove a label to free a comparison slot. **Look up current record** refreshes a selected label from the provider.
 
-Enable **Settings → General → Template repository** here. This repository does not
-need Pages enabled: its workflow builds/tests but intentionally skips deployment.
-New copies also skip deployment until `scripts/init.py` sets the tool ID to match
-their repository name. This lets you create the repo before configuring Pages.
+Switch the nutrition basis to compare the source’s normalized 100 g/mL values or its published serving values. Millilitres and grams stay distinct. When the record does not establish the basis, it is labelled unknown. Different serving sizes are explicitly identified. Values use the unprepared `nutriments` fields; there is no invented density, portion or prepared-food calculation. Sodium is converted from grams to milligrams. Empty allergen/trace fields mean no data was listed, not absence of allergens. Always check the actual package.
 
-## Start a new tool
+**Save receipt JSON** preserves the exact selected source responses and retrieval dates. **Open receipt** reads that file locally. **Export nutrition CSV** uses the selected basis and includes sources, dates and units. The tool keeps comparisons and a temporary lookup cache in memory only; reload starts with the configured defaults. Product names and other source text are rendered as text, not HTML.
 
-1. Select **Use this template → Create a new repository**, choose owner `jsdyer`,
-   a unique lowercase name such as `my-tool`, and public visibility.
-2. Clone the new repository. Use Python 3.12+ and Node 24+.
-3. Set the identity, using a slug that matches the repository name:
+## Expand or customize
 
-```sh
-python3 scripts/init.py my-tool --title "My Tool" --description "Describe what this tool does."
+Edit [`web/config.json`](web/config.json). The application and collector read this same file; no fixed product count is embedded in the UI, tests or validation.
+
+```json
+{
+  "maxProducts": 6,
+  "exampleBarcodes": ["069000019832", "04963406", "5000112519945", "3017620422003"],
+  "initialBarcodes": ["069000019832", "04963406", "3017620422003"],
+  "requestIntervalMs": 5000,
+  "requestsPerMinute": 12
+}
 ```
 
-Review the category, tags and icon in `tool.json`. `access: "browser"` tells the main
-catalogue that the tool works immediately without installation. `--owner` supports a different
-GitHub owner, but only projects owned by `jsdyer` inherit the CoolCode domain.
+- `maxProducts`: number of simultaneous comparison slots, from 2–24. Four is the initial default, not a fixed data-coverage limit.
+- `exampleBarcodes`: editable saved-label shortcuts. Any barcode outside this list still works in live lookup. The example collector is capped at 100 records because the provider asks larger consumers to use bulk downloads.
+- `initialBarcodes`: labels to open by default; use a subset of `exampleBarcodes` within your comparison capacity.
+- `requestIntervalMs`: minimum spacing between live requests; at least 4200 ms. Keep the default 5000 ms unless making it slower.
+- `requestsPerMinute`: tab-local budget, no more than 12; the provider limit currently says 15 product reads/minute/IP. Other tabs/apps sharing an IP also count toward its limit.
 
-4. Replace the example in `web/` and its tests. Update the privacy explanation,
-   source attribution and README to describe the real tool.
-5. Test and preview:
+Changing capacity is effective on the next deployment. Changing saved records requires a refresh:
+
+1. Edit and commit `web/config.json`.
+2. In GitHub **Actions → Label Compare · Check and publish → Run workflow**, select **Refresh the saved labels listed in web/config.json**.
+3. The workflow fetches every configured example, validates/tests/builds, and publishes only after successful checks. A failed fetch leaves the previous saved data intact. Refresh the website after the deploy job succeeds.
+
+Or locally:
 
 ```sh
+python3 scripts/refresh_examples.py
 node --test tests/*.test.mjs
 python3 -m unittest discover -s tests -v
 python3 scripts/build.py
-python3 -m http.server 8000 --directory dist
 ```
 
-Open `http://localhost:8000/`. The example trims lines, skips blanks and removes exact
-duplicates, preserving first-seen order and capitalization. It processes the text in tab memory. Update that explanation if your app behaves differently.
+Commit the config and `web/data/examples.json` with any relevant code changes; do not commit `dist/`. A normal push rebuilds the saved data; live barcode lookups always fetch on demand. There is no automatic example-refresh schedule. Empty `exampleBarcodes` and `initialBarcodes` are supported for a blank starting desk. Add nutrient rows in `web/model.mjs` (`NUTRIENTS`) and add their source fields if necessary; monetary-style rounding or cross-product health scores are not applied.
 
-CI also tests the browser flow and mobile layout at a project subpath. Replace the
-sample assertions in `tests/browser_smoke.py` when implementing your own UI. To run
-that check locally (optional for ordinary preview):
+## API, registration and privacy
 
-```sh
-python3 -m venv .venv
-. .venv/bin/activate
-python3 -m pip install -r tests/browser-requirements.txt
-python3 -m playwright install --with-deps chromium
-python3 tests/browser_smoke.py
-```
+No API key or secret is needed for Open Food Facts **read** requests. The application uses the current `/api/v3/product/{barcode}` endpoint and requests only relevant fields. CORS was checked against the production endpoint. Browser requests identify the app using the documented `User-Agent` query parameter because browsers do not reliably allow a custom User-Agent header. The Python collector sends an identifying User-Agent header. The app does not make product writes.
 
-Playwright is a test-only dependency; the app and its static build do not use it.
+Open Food Facts asks app developers to create an app account and fill in its [API usage form](https://docs.google.com/forms/d/e/1FAIpQLSdIE3D8qvjC_zRJw1W8OmuHhsWJ_NSckiiniAHlfaVwUZCziQ/viewform). This is an owner setup task, not a visitor requirement, and no credentials belong in this repository. Suggested description: “Label Compare at https://coolcode.ca/labelcompare/ is a free public browser comparison of food nutrition, ingredients, reported allergens and missing data. Visitors request individual barcodes; responses are cached in the current tab, requests are spaced at least five seconds apart, and the tab budget is twelve reads per minute. No writes, advertising profiles or bulk crawling. Open Food Facts attribution and reuse licences are displayed and retained in receipts.”
 
-## Publish and register
+Only an explicitly looked-up barcode and ordinary connection information go to Open Food Facts. Product pictures are requested from its image service when displayed. Imports stay in the browser. No shopping history, health profile, account details, API keys or passwords are stored by Label Compare. Downloads are under the visitor’s control. Existing CoolCode aggregate visit counting follows the hub’s preferences.
 
-When the actual tool is ready, in the **new tool repository** set **Settings → Pages → Build and deployment →
-Source → GitHub Actions**. Push to `main`, or manually run **Browser tool · Check and
-publish** after enabling Pages. If the initial deployment ran before Pages was enabled,
-enable it and rerun. PRs only check/build and provide a downloadable preview artifact.
+## Data sources and reuse
 
-Keep `{{VISIT_COUNTER}}` in the page head and `{{ISSUE_LINK}}` in the footer when replacing the starter UI. The build enables these for initialized CoolCode repositories. The shared counter records aggregate opens on coolcode.ca by public tool ID. Toolbox inputs and URL parameters are excluded. The issue link opens a reporting form with the tool already selected.
+- [Open Food Facts API documentation](https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/) and [v3 product lookup](https://openfoodfacts.github.io/documentation/docs/Product-Opener/v3/products/get-api-v3-product-code/).
+- Product database: [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/); individual contents: [Database Contents License](https://opendatacommons.org/licenses/dbcl/1-0/). Dated saved records and exported receipts retain those terms.
+- Product images: Open Food Facts contributors, [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/). Images are displayed without alteration; packaging may contain separately protected material. Every card links to its original record.
+- [Provider reuse guidance](https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/tutorials/license-be-on-the-legal-side/).
 
-Keep app-owned asset paths and module imports relative. Check `https://coolcode.ca/my-tool/`.
-Do not add a CNAME or set `coolcode.ca` as this project's custom domain; the account
-site supplies it. Only successful `main` builds deploy.
+Data is community-contributed, not independently verified. A record may describe another market or formulation. Source edit dates and retrieval dates have different meanings. The starter records are not a representative Canadian grocery sample.
 
-After verifying the app, copy the reviewed object from `tool.json` into `data/tools.json`
-in [the main site](https://github.com/jsdyer/jsdyer.github.io). Each tool still builds
-independently. Update the hub record when listing metadata changes; the hub is the
-authority for discovery. Ordinary app updates touch only this repository.
+Related tools: [Canadian Price Atlas](https://coolcode.ca/priceatlas/) and [Pantry Prices](https://coolcode.ca/pantryprices/).
 
-The main site separates **Use in your browser** from **Install yourself**. An app
-that asks for a file is still a browser tool. Standalone Linux packages should start
-in their own repositories with their own build/release workflow, rather than copying
-this browser-only scaffold. Their hub record uses `access: "install"`, links to an
-installation guide, and includes `requirements`.
+## Build and test
 
-## Files
-
-| Path | Purpose |
-| --- | --- |
-| `tool.json` | Page metadata and a ready-to-copy catalogue record |
-| `web/` | HTML, responsive CSS, DOM interactions and separate model logic |
-| `scripts/build.py` | Escape metadata and build `web/` into `dist/` |
-| `scripts/init.py` | Set a new project's identity |
-| `tests/` | Application and builder tests |
-| `.github/workflows/pages.yml` | Check PRs and publish successful main builds |
-| `AGENTS.md` | Instructions for future coding work |
-
-Namespace optional storage as `coolcode:<tool-id>:<key>`; CoolCode paths share a
-browser origin. Don't save pasted text/uploads by default. Document external APIs
-and send only the information needed for the selected action. Never embed secrets.
-
-Scheduled refresh is opt-in. Validate source data before deploying, display its date,
-and preserve the last good deployment on failure. Public-repository schedules can
-stop after 60 days without repository activity.
-
-Templates don't propagate future edits automatically. Adopt fixes explicitly and
-consider a versioned reusable workflow once several tools confirm the shared process.
-Choose and add the intended software license before distributing a new project.
+Uses standard Python and browser JavaScript; no runtime dependencies. The default build is offline. CI runs the Node model tests, Python build/collector tests and a browser check at a project subpath, then publishes `dist/` to GitHub Pages. Browser tests intercept provider calls with retained real source responses, so external API availability cannot mask an application defect.

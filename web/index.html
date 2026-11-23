@@ -1,34 +1,14 @@
 <!doctype html>
-<html lang="en-CA">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="description" content="{{DESCRIPTION}}">
-  <title>{{TITLE}} · CoolCode</title>
-  <link rel="stylesheet" href="./style.css">
-  <script type="module" src="./app.mjs"></script>
-  {{VISIT_COUNTER}}
-</head>
-<body data-tool-id="{{TOOL_ID}}">
-  <a class="skip" href="#main">Skip to content</a>
-  <header><a href="https://coolcode.ca/">← CoolCode.ca</a><a href="{{SOURCE_URL}}">Source &amp; instructions ↗</a></header>
-  <main id="main">
-    <p class="eyebrow">Browser tool starter</p>
-    <h1>{{TITLE}}</h1>
-    <p class="intro">{{DESCRIPTION}}</p>
-    <section aria-labelledby="example-title">
-      <h2 id="example-title">Clean a list</h2>
-      <p>Trim spaces, skip blank lines and remove exact duplicates. Capitalization stays distinct.</p>
-      <div class="panels">
-        <div><label for="input">Your lines</label><textarea id="input" rows="10" maxlength="100000" spellcheck="false" placeholder="Paste one item per line"></textarea></div>
-        <div><label for="output">Cleaned lines</label><textarea id="output" rows="10" readonly spellcheck="false"></textarea></div>
-      </div>
-      <div class="actions"><button id="sample" type="button">Load example</button><button id="clear" type="button">Clear</button><button id="copy" type="button" hidden>Copy result</button></div>
-      <p id="status" role="status" aria-live="polite">Paste a list to begin.</p>
-      <noscript><p>This tool needs JavaScript to process your text. The source is available above.</p></noscript>
-    </section>
-    <aside aria-label="Privacy"><strong>Stays on your device.</strong> The browser processes your text in this tab. Reloading clears it.</aside>
-  </main>
-  <footer>Part of <a href="https://coolcode.ca/">the CoolCode collection</a>. {{ISSUE_LINK}}</footer>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{TITLE}} · CoolCode</title><meta name="description" content="{{DESCRIPTION}}"><link rel="canonical" href="https://coolcode.ca/{{TOOL_ID}}/"><meta property="og:title" content="Label Compare · CoolCode"><meta property="og:description" content="A clearer view of the labels on your shelf."><link rel="stylesheet" href="./style.css"><script type="module" src="./app.mjs"></script>{{VISIT_COUNTER}}</head>
+<body><a class="skip" href="#workbench">Skip to comparison</a><header class="site-header"><a class="home" href="https://coolcode.ca/">CoolCode<span aria-hidden="true"> / </span><span>Label Compare</span></a><nav aria-label="Page"><a href="#method">Sources & method</a><a href="{{SOURCE_URL}}">GitHub</a></nav></header>
+<main><section class="hero"><div><p class="eyebrow">THE EVERYDAY EVIDENCE DESK</p><h1>Read between<br>the labels.</h1><p class="intro">Put nutrition, ingredients and missing information side by side. Start with a barcode from your own shelf.</p><a href="#workbench" class="hero-link">Open the comparison desk</a></div><aside class="label-art" aria-label="A label is a record, not the whole story"><span class="label-brand">LABEL COMPARE</span><strong>Same shelf.<br>Different story.</strong><div class="barcode-art" aria-hidden="true"></div><span class="label-small">OPEN DATA / YOUR COMPARISON</span></aside></section>
+<section id="workbench" class="workbench" aria-labelledby="desk-title"><div class="section-heading"><div><p class="eyebrow">MAKE YOUR OWN COMPARISON</p><h2 id="desk-title">What’s on your shelf?</h2></div><p id="capacity">Loading configuration…</p></div>
+<form id="lookup-form" class="lookup"><div class="field"><label for="barcode">Product barcode</label><input id="barcode" name="barcode" inputmode="numeric" autocomplete="off" placeholder="e.g. 069000019832" aria-describedby="barcode-hint" required><p id="barcode-hint">Enter the printed digits. Lookups go to Open Food Facts.</p></div><button type="submit" id="add-product">Find & add product</button></form>
+<div class="example-row"><span>Try a saved label:</span><div id="examples" class="examples"></div><span id="examples-date" class="muted"></span></div>
+<p id="status" role="status" aria-live="polite">Loading saved labels…</p>
+<div class="toolbar"><div><label for="basis">Nutrition basis</label><select id="basis"><option value="per100">Per 100 g / 100 mL</option><option value="serving">Per reported serving</option></select></div><div class="tools"><button id="export-json" class="secondary">Save receipt JSON</button><button id="export-csv" class="secondary">Export nutrition CSV</button><label class="file-button" for="import-json">Open receipt<input type="file" id="import-json" accept="application/json,.json"></label><button id="clear" class="text-button">Clear desk</button></div></div>
+<p id="basis-note" class="basis-note"></p><div id="products" class="product-grid" aria-label="Selected product labels"></div>
+<section class="nutrition-section" aria-labelledby="nutrition-title"><div class="section-heading"><div><p class="eyebrow">THE NUMBERS, WITH THEIR UNITS</p><h2 id="nutrition-title">Nutrition at a glance</h2></div><span class="muted">Missing is not zero.</span></div><div class="table-wrap" tabindex="0" role="region" aria-label="Scrollable nutrition comparison"><table id="nutrition-table"><caption>Reported nutrition for the selected products</caption><thead id="nutrition-head"></thead><tbody id="nutrition-body"></tbody></table></div><p class="small-note">Values describe the source record. “~” means approximate; “&lt;” and “&gt;” preserve a source qualifier. No health ranking is calculated.</p></section>
+<div class="notice"><strong>Read the actual package, especially for allergies.</strong><p>Contributor records can be incomplete, out of date or specific to another country. An empty allergen or trace field does not mean a product is free of allergens.</p></div></section>
+<section id="method" class="method" aria-labelledby="method-title"><div><p class="eyebrow">KEEP THE CONTEXT</p><h2 id="method-title">A useful second look.</h2><p>This is a comparison of published food records, with a link back to every label. The saved examples are starting points; you can look up any supported barcode.</p></div><div class="method-details"><details open><summary>Where the data comes from</summary><p>Open Food Facts is a community-maintained database. Barcode lookups use its public v3 API. Country listings describe where a product has been reported, not where your particular package was made or sold. Saved labels show their retrieval date and each record’s last edit date.</p><p><a href="https://world.openfoodfacts.org/">Open Food Facts</a> · <a href="https://openfoodfacts.github.io/documentation/docs/Product-Opener/api/">API documentation</a></p></details><details><summary>Comparing portions and missing information</summary><p>The 100 g / 100 mL view uses source-normalized nutrient fields. Millilitres and grams are kept distinct. When the record does not establish its unit, we label it unknown. The serving view only shows published serving values when a serving description exists; it does not invent a portion or convert densities. Sodium is converted from the source’s grams to milligrams. No prepared-food conversion is applied.</p></details><details><summary>Your data and downloads</summary><p>Your comparison stays in this tab unless you download a receipt. Barcodes you explicitly look up, your IP and normal connection information go to Open Food Facts. Product images load from its image service. Imported receipts are read locally. No account, shopping history or dietary profile is stored here.</p><p>JSON receipts preserve the selected source records and retrieval times so you can reopen them. CSV includes the selected nutrient basis, units, sources and dates. A receipt is a dated copy, not a guarantee that the label is current.</p></details><details><summary>Reuse and expanding the tool</summary><p>Product data: <a href="https://opendatacommons.org/licenses/odbl/1-0/">Open Database License</a>; individual contents: <a href="https://opendatacommons.org/licenses/dbcl/1-0/">Database Contents License</a>. Product images: <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA</a>, credited to Open Food Facts contributors; packaging may carry other rights. The data in downloadable receipts retains these licences.</p><p>Edit <a href="https://github.com/jsdyer/labelcompare/blob/main/web/config.json">config.json</a> to change example barcodes, starting labels and comparison capacity. The README explains refreshing the saved labels. None of those lists restrict live lookups.</p></details></div></section><p class="related">Also on CoolCode: <a href="https://coolcode.ca/priceatlas/">Canadian Price Atlas</a> · <a href="https://coolcode.ca/pantryprices/">Pantry Prices</a></p></main>
+<footer><a href="https://coolcode.ca/">More CoolCode tools</a><span>Label Compare · Open Food Facts contributors</span>{{ISSUE_LINK}}</footer></body></html>

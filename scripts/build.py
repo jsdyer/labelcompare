@@ -7,6 +7,7 @@ import re
 import shutil
 import tempfile
 from urllib.parse import urlsplit
+from refresh_examples import validate_config
 
 ROOT = Path(__file__).resolve().parents[1]
 SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
@@ -42,6 +43,7 @@ def metadata(root=ROOT):
 
 def build(root=ROOT):
     tool = metadata(root)
+    validate_config(json.loads((root / "web/config.json").read_text()))
     output = root / "dist"
     if output.is_symlink():
         raise ValueError("dist must not be a symlink")

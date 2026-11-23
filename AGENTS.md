@@ -26,3 +26,5 @@
   the extra practical detail in the hub README. Only the short source sentence
   belongs in the homepage record. Import the note with `scripts/sync_guides.py
   --tool TOOL_ID` in the hub before regenerating its README.
+
+- Keep defaults and starter labels in `web/config.json`; never make these an allowlist for live lookups. Derive counts from loaded data, test expanding configuration, and keep the README “Expand or customize” instructions current.

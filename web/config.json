@@ -1,0 +1,7 @@
+{
+  "maxProducts": 4,
+  "exampleBarcodes": ["069000019832", "04963406", "5000112519945"],
+  "initialBarcodes": ["069000019832", "04963406"],
+  "requestIntervalMs": 5000,
+  "requestsPerMinute": 12
+}

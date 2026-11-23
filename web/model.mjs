@@ -3,8 +3,25 @@ export const NUTRIENTS = [
   {id:'saturated-fat',name:'Saturated fat',unit:'g'}, {id:'carbohydrates',name:'Carbohydrate',unit:'g'},
   {id:'sugars',name:'Sugars',unit:'g'}, {id:'fiber',name:'Fibre',unit:'g'},
   {id:'proteins',name:'Protein',unit:'g'}, {id:'sodium',name:'Sodium',unit:'mg',factor:1000},
+  {id:'added-sugars',name:'Added sugars',unit:'g',optional:true}, {id:'trans-fat',name:'Trans fat',unit:'g',optional:true},
+  {id:'cholesterol',name:'Cholesterol',unit:'mg',factor:1000,optional:true},
+  {id:'calcium',name:'Calcium',unit:'mg',factor:1000,optional:true},
+  {id:'potassium',name:'Potassium',unit:'mg',factor:1000,optional:true},
+  {id:'iron',name:'Iron',unit:'mg',factor:1000,optional:true},
+  {id:'magnesium',name:'Magnesium',unit:'mg',factor:1000,optional:true},
+  {id:'phosphorus',name:'Phosphorus',unit:'mg',factor:1000,optional:true},
+  {id:'zinc',name:'Zinc',unit:'mg',factor:1000,optional:true},
+  {id:'vitamin-a',name:'Vitamin A',unit:'µg',factor:1000000,optional:true},
+  {id:'vitamin-c',name:'Vitamin C',unit:'mg',factor:1000,optional:true},
+  {id:'vitamin-d',name:'Vitamin D',unit:'µg',factor:1000000,optional:true},
+  {id:'vitamin-e',name:'Vitamin E',unit:'mg',factor:1000,optional:true},
+  {id:'vitamin-b1',name:'Vitamin B1',unit:'mg',factor:1000,optional:true},
+  {id:'vitamin-b2',name:'Vitamin B2',unit:'mg',factor:1000,optional:true},
+  {id:'vitamin-b6',name:'Vitamin B6',unit:'mg',factor:1000,optional:true},
+  {id:'vitamin-b12',name:'Vitamin B12',unit:'µg',factor:1000000,optional:true},
+  {id:'pantothenic-acid',name:'Pantothenic acid (B5)',unit:'mg',factor:1000,optional:true},
 ];
-export const FIELDS = 'code,product_name,product_name_en,brands,quantity,serving_size,nutrition_data_per,nutriments,ingredients_text,ingredients_text_en,allergens_tags,traces_tags,countries_tags,image_front_small_url,last_modified_t,product_quantity_unit,serving_quantity_unit';
+export const FIELDS = 'code,product_name,product_name_en,brands,quantity,serving_size,nutrition_data_per,nutriments,ingredients_text,ingredients_text_en,allergens_tags,traces_tags,countries_tags,categories,categories_tags,labels,labels_tags,origins,manufacturing_places,stores,packaging_text,packaging,image_front_small_url,image_front_url,image_ingredients_url,image_nutrition_url,last_modified_t,product_quantity_unit,serving_quantity_unit';
 export function barcode(value) {
   const code=String(value??'').replace(/[\s-]/g,'');
   if (!/^\d{8,14}$/.test(code)) throw new Error('Enter a barcode with 8–14 digits. Spaces and hyphens are fine.');
@@ -15,6 +32,7 @@ export function tags(values) {
   return Array.isArray(values) ? values.map(v=>typeof v==='string'?v: v?.lc_name||v?.id||'').filter(Boolean).map(v=>v.replace(/^[a-z]{2}:/,'').replaceAll('-',' ')) : [];
 }
 export function number(value) { return typeof value==='number' && Number.isFinite(value) && value>=0 ? value : null; }
+export function sourceImage(value) { return typeof value==='string' && /^https:\/\/images\.openfoodfacts\.org\//.test(value)?value:null; }
 export function basisUnit(p) {
   const basis=String(p.nutrition_data_per||'').toLowerCase();
   if(basis==='100ml') return 'mL';
@@ -32,8 +50,11 @@ export function normalize(raw,capturedAt,origin='live') {
   return {code,name:String(p.product_name_en||p.product_name||'Unnamed product'),brand:String(p.brands||''),
     quantity:String(p.quantity||''),serving:String(p.serving_size||''),basisUnit:basisUnit(p),
     ingredients:String(p.ingredients_text_en||p.ingredients_text||''),allergens:tags(p.allergens_tags),traces:tags(p.traces_tags),countries:tags(p.countries_tags),
+    categories:String(p.categories||tags(p.categories_tags).join(', ')),labels:String(p.labels||tags(p.labels_tags).join(', ')),
+    origins:String(p.origins||''),manufacturing:String(p.manufacturing_places||''),stores:String(p.stores||''),packaging:String(p.packaging_text||p.packaging||''),
+    photos:[['Front of pack',p.image_front_url||p.image_front_small_url],['Ingredients photo',p.image_ingredients_url],['Nutrition photo',p.image_nutrition_url]].filter(([,url])=>sourceImage(url)).map(([label,url])=>({label,url})),
     nutrients:Object.fromEntries(NUTRIENTS.map(n=>[n.id,{per100:number(p.nutriments?.[`${n.id}_100g`]),serving:number(p.nutriments?.[`${n.id}_serving`]),modifier:['<','>','~','≤','≥'].includes(p.nutriments?.[`${n.id}_modifier`])?p.nutriments[`${n.id}_modifier`] : ''}])),
-    image: typeof p.image_front_small_url==='string' && /^https:\/\/images\.openfoodfacts\.org\//.test(p.image_front_small_url)?p.image_front_small_url:null,
+    image:sourceImage(p.image_front_small_url||p.image_front_url),
     updatedAt:typeof p.last_modified_t==='number'&&Number.isFinite(p.last_modified_t)&&p.last_modified_t>0?new Date(p.last_modified_t*1000).toISOString():null,
     source:`https://world.openfoodfacts.org/product/${code}`,capturedAt,origin};
 }
@@ -43,6 +64,7 @@ export function amount(product,nutrient,basis='per100') {
   return value===null?null:value*(nutrient.factor||1);
 }
 export function formatAmount(value) { return value===null?'Not reported':new Intl.NumberFormat('en-CA',{maximumFractionDigits:2}).format(value); }
+export function visibleNutrients(products) { return NUTRIENTS.filter(n=>!n.optional||products.some(p=>amount(p,n,'per100')!==null||amount(p,n,'serving')!==null)); }
 export function comparisonNote(products,basis) {
   if(basis==='serving') return 'Each column uses its own reported serving. Serving sizes differ; these amounts are not an equal-portion comparison.';
   const units=new Set(products.map(p=>p.basisUnit));
@@ -66,9 +88,10 @@ export function productURL(code) {
   return u.href;
 }
 export function csv(products,basis) {
+  const nutrients=visibleNutrients(products);
   const esc=v=>{let value=String(v??'');if(typeof v==='string'&&/^\s*[=+@\-\t\r]/.test(value))value="'"+value;return '"'+value.replaceAll('"','""')+'"';};
-  const header=['Barcode','Product','Brand','Basis','Serving','Source','Retrieved','Attribution','Data licence',...NUTRIENTS.flatMap(n=>[`${n.name} (${n.unit})`,`${n.name} qualifier`])];
-  const rows=products.map(p=>[p.code,p.name,p.brand,basis==='serving'?'reported serving':`100 ${p.basisUnit||'g/mL (unit unknown)'}`,p.serving,p.source,p.capturedAt,'Open Food Facts contributors','https://opendatacommons.org/licenses/odbl/1-0/',...NUTRIENTS.flatMap(n=>{const v=amount(p,n,basis);return [v??'',v===null?'':p.nutrients[n.id].modifier];})]);
+  const header=['Barcode','Product','Brand','Basis','Serving','Source','Retrieved','Attribution','Data licence',...nutrients.flatMap(n=>[`${n.name} (${n.unit})`,`${n.name} qualifier`])];
+  const rows=products.map(p=>[p.code,p.name,p.brand,basis==='serving'?'reported serving':`100 ${p.basisUnit||'g/mL (unit unknown)'}`,p.serving,p.source,p.capturedAt,'Open Food Facts contributors','https://opendatacommons.org/licenses/odbl/1-0/',...nutrients.flatMap(n=>{const v=amount(p,n,basis);return [v??'',v===null?'':p.nutrients[n.id].modifier];})]);
   return [header,...rows].map(row=>row.map(esc).join(',')).join('\r\n');
 }
 export function validateReceipt(value,maxProducts) {

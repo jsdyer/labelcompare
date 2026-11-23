@@ -1,4 +1,4 @@
-import {NUTRIENTS,barcode,identity,normalize,amount,formatAmount,comparisonNote,validateConfig,productURL,csv,validateReceipt} from './model.mjs';
+import {visibleNutrients,barcode,identity,normalize,amount,formatAmount,comparisonNote,validateConfig,productURL,csv,validateReceipt} from './model.mjs';
 const $=id=>document.getElementById(id);
 let config,records=[],examples=[],busy=false,requestTimes=[];
 const cache=new Map();
@@ -24,11 +24,14 @@ function render(){
     const title=el('div');title.append(el('p',p.brand||'Brand not recorded','brand'),el('h3',p.name),el('span',p.code,'code'));intro.append(title);card.append(intro);
     const dl=el('dl');for(const [label,value] of [['Package',p.quantity||'Not reported'],['Serving',p.serving||'Not reported'],['Nutrition basis',p.basisUnit?`100 ${p.basisUnit}`:'100 g/mL · unit unknown'],['Markets reported',p.countries.join(', ')||'Not reported']]){const cell=el('div');cell.append(el('dt',label),el('dd',value));dl.append(cell);}card.append(dl);
     card.append(el('h4','Ingredients'),el('p',p.ingredients||'Ingredient list not reported.','ingredients'+(!p.ingredients?' unknown':'')),el('h4','Reported allergens'),tagList(p.allergens,'No allergen data listed'),el('h4','Reported traces'),tagList(p.traces,'No trace data listed'));
+    const details=el('details',undefined,'label-details');details.append(el('summary','More label details & photos'));
+    const extra=el('dl');for(const [label,value] of [['Categories',p.categories],['Label claims',p.labels],['Ingredient origins',p.origins],['Manufacturing places',p.manufacturing],['Stores reported',p.stores],['Packaging',p.packaging]]){const cell=el('div');cell.append(el('dt',label),el('dd',value||'Not reported',value?'':'unknown'));extra.append(cell);}details.append(extra);
+    const photos=el('div',undefined,'photo-links');p.photos.forEach(photo=>photos.append(link(photo.label,photo.url)));if(!p.photos.length)photos.append(el('span','No label photos in this record.','unknown'));details.append(el('h4','Source photographs'),photos,el('p','Open the original label photos to check the transcription. Claims, origins and store listings are contributor records, not independent verification.','small-note'));card.append(details);
     const source=el('p',undefined,'source-line');source.append(el('span',`Retrieved ${date(p.capturedAt)} · Edited ${date(p.updatedAt)}`),link('Read source label',p.source));card.append(source);
     const refresh=el('button','Look up current record','refresh');refresh.disabled=busy;refresh.onclick=()=>lookup(p.code,true);card.append(refresh);$('products').append(card);
   }
   const head=el('tr');head.append(el('th','Nutrient'));products.forEach(p=>{const th=el('th',p.name);th.scope='col';th.append(el('small',basis==='serving'?(p.serving||'Serving size missing'):`Per 100 ${p.basisUnit||'g/mL · unit unknown'}`));head.append(th);});$('nutrition-head').replaceChildren(head);$('nutrition-body').replaceChildren();
-  NUTRIENTS.forEach(n=>{const row=el('tr');const label=el('th',n.name+' ('+n.unit+')');label.scope='row';row.append(label);products.forEach(p=>{const value=amount(p,n,basis);const qualifier=value!==null?p.nutrients[n.id].modifier:'';const cell=el('td',qualifier+formatAmount(value),value===null?'missing':undefined);row.append(cell);});$('nutrition-body').append(row);});
+  visibleNutrients(products).forEach(n=>{const row=el('tr');const label=el('th',n.name+' ('+n.unit+')');label.scope='row';row.append(label);products.forEach(p=>{const value=amount(p,n,basis);const qualifier=value!==null?p.nutrients[n.id].modifier:'';const cell=el('td',qualifier+formatAmount(value),value===null?'missing':undefined);row.append(cell);});$('nutrition-body').append(row);});
   $('export-json').disabled=!records.length;$('export-csv').disabled=!records.length;$('add-product').disabled=busy;$('clear').disabled=busy;
 }
 async function lookup(value,refresh=false){

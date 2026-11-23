@@ -3,14 +3,16 @@
 A public browser tool for comparing food labels by barcode. [Open Label Compare](https://coolcode.ca/labelcompare/).
 
 <!-- coolcode:guide -->
-Enter any food barcode to compare nutrition, ingredients and reported allergens. Switch between source-normalized 100 g/mL and each product’s own serving, then save a dated JSON receipt to reopen later; missing fields never become zero or an allergy-free claim.
+Enter any food barcode to compare nutrition, including reported vitamins and minerals, ingredients and allergens. Inspect original label photos and additional product details. Switch between source-normalized 100 g/mL and each product’s own serving, then save a dated JSON receipt to reopen later; missing fields never become zero or an allergy-free claim.
 <!-- /coolcode:guide -->
 
 ## Use it
 
 The opening comparison contains real, dated Open Food Facts beverage records, including a Diet Pepsi record listing Canada. These are convenient starting points, not an allowlist. Enter an 8–14 digit barcode from your own package and choose **Find & add product**. Spaces and hyphens are accepted; UPC leading-zero aliases refer to the same product. Remove a label to free a comparison slot. **Look up current record** refreshes a selected label from the provider.
 
-Switch the nutrition basis to compare the source’s normalized 100 g/mL values or its published serving values. Millilitres and grams stay distinct. When the record does not establish the basis, it is labelled unknown. Different serving sizes are explicitly identified. Values use the unprepared `nutriments` fields; there is no invented density, portion or prepared-food calculation. Sodium is converted from grams to milligrams. Empty allergen/trace fields mean no data was listed, not absence of allergens. Always check the actual package.
+Switch the nutrition basis to compare the source’s normalized 100 g/mL values or its published serving values. Millilitres and grams stay distinct. When the record does not establish the basis, it is labelled unknown. Different serving sizes are explicitly identified. Values use the unprepared `nutriments` fields; there is no invented density, portion or prepared-food calculation. Sodium, cholesterol and minerals are converted from standardized grams to milligrams; vitamins A, D and B12 use micrograms. Additional nutrient rows appear only when a selected record supplies a per-100 or serving value. Missing values remain “Not reported”; no daily-value percentages are invented. Empty allergen/trace fields mean no data was listed, not absence of allergens. Always check the actual package.
+
+Expand **More label details & photos** on a product card for source categories, label claims, ingredient origins, manufacturing places, stores and packaging. These are reported fields, not independently verified claims. Empty fields remain “Not reported”. Links open the provider’s front, ingredients and nutrition photographs where available, so you can inspect the label itself. A Canada market tag is not proof of Canadian origin. Older receipts may lack these new metadata fields; use **Look up current record** to retrieve them.
 
 **Save receipt JSON** preserves the exact selected source responses and retrieval dates. **Open receipt** reads that file locally. **Export nutrition CSV** uses the selected basis and includes sources, dates and units. The tool keeps comparisons and a temporary lookup cache in memory only; reload starts with the configured defaults. Product names and other source text are rendered as text, not HTML.
 

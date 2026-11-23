@@ -9,7 +9,7 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-FIELDS = 'code,product_name,product_name_en,brands,quantity,serving_size,nutrition_data_per,nutriments,ingredients_text,ingredients_text_en,allergens_tags,traces_tags,countries_tags,image_front_small_url,last_modified_t,product_quantity_unit,serving_quantity_unit'
+FIELDS = 'code,product_name,product_name_en,brands,quantity,serving_size,nutrition_data_per,nutriments,ingredients_text,ingredients_text_en,allergens_tags,traces_tags,countries_tags,categories,categories_tags,labels,labels_tags,origins,manufacturing_places,stores,packaging_text,packaging,image_front_small_url,image_front_url,image_ingredients_url,image_nutrition_url,last_modified_t,product_quantity_unit,serving_quantity_unit'
 USER_AGENT = 'CoolCode-LabelCompare/1.0 (https://coolcode.ca/labelcompare/; jeffdyer@gmail.com)'
 
 

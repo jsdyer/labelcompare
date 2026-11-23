@@ -37,14 +37,20 @@ def main():
                 if saved['records']:
                     page.locator('#clear').click()
                     assert page.locator('.product-card').count()==0
-                    response=saved['records'][-1]['raw']
+                    response=json.loads((ROOT/'tests/fixtures/milk.json').read_text())['raw']
                     page.route('https://world.openfoodfacts.org/api/v3/product/**',lambda route:route.fulfill(status=200,content_type='application/json',body=json.dumps(response),headers={'Access-Control-Allow-Origin':'*'}))
-                    page.locator('#barcode').fill(response['product']['code'])
+                    page.locator('#barcode').fill('68700104060')
                     page.locator('#add-product').click()
                     page.locator('#status').filter(has_text='Source records can differ').wait_for()
                     assert page.locator('.product-card').count()==1
                     assert page.locator('.product-card .origin').inner_text().strip().casefold()=='live lookup'
                     assert page.locator('.product-card').get_attribute('data-barcode')==response['product']['code']
+                    page.locator('#basis').select_option('serving')
+                    assert page.locator('#nutrition-body tr').filter(has_text='Calcium (mg)').locator('td').inner_text()=='500'
+                    assert page.locator('#nutrition-body tr').filter(has_text='Vitamin D (µg)').locator('td').inner_text()=='5'
+                    page.locator('.label-details summary').click()
+                    assert page.locator('.photo-links a').count()==3
+                    assert 'Not reported' in page.locator('.label-details').inner_text()
                     with page.expect_download() as download:
                         page.locator('#export-json').click()
                     receipt=json.loads(Path(download.value.path()).read_text())

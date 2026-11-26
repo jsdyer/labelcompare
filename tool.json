@@ -17,6 +17,6 @@
   "access": "browser",
   "data_info": {
     "mode": "mixed",
-    "detail": "Live Open Food Facts barcode lookups, dated starter labels and local receipt comparisons."
+    "detail": "Live Open Food Facts barcode lookups, dated starter labels and local receipt comparisons. Optional private receipt history compares dated package quantities and actual prices."
   }
 }

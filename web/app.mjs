@@ -63,7 +63,7 @@ async function main(){
   for(const code of config.initialBarcodes){const record=examples.find(r=>identity(product(r).code)===identity(code));if(record)add(record);}
   $('examples-date').textContent=`Saved ${date(data.capturedAt)}`;render();message(`${records.length} saved labels loaded. Enter any barcode to make your own comparison.`);
   $('lookup-form').onsubmit=e=>{e.preventDefault();lookup($('barcode').value);};$('basis').onchange=render;
-  $('clear').onclick=()=>{records=[];render();message('Desk cleared. No shopping history is stored.');};
+  $('clear').onclick=()=>{records=[];render();message('Label desk cleared. Receipt history below is separate and unchanged.');};
   $('export-json').onclick=()=>download('labelcompare-receipt.json',JSON.stringify({schemaVersion:1,tool:'labelcompare',exportedAt:new Date().toISOString(),basis:$('basis').value,attribution:'Open Food Facts contributors',dataLicense:'https://opendatacommons.org/licenses/odbl/1-0/',records:records.map(({raw,capturedAt})=>({raw,capturedAt}))},null,2),'application/json');
   $('export-csv').onclick=()=>download('labelcompare-nutrition.csv',csv(records.map(product),$('basis').value),'text/csv;charset=utf-8');
   $('import-json').onchange=async e=>{const file=e.target.files[0];if(!file)return;try{if(file.size>10000000)throw new Error('Receipt exceeds the 10 MB import limit.');const data=JSON.parse(await file.text());const imported=validateReceipt(data,config.maxProducts);records=imported.map(r=>({raw:r.raw,capturedAt:r.capturedAt,origin:'imported'}));if(['per100','serving'].includes(data.basis))$('basis').value=data.basis;render();message(`${records.length} receipt labels opened locally.`);}catch(err){message(err.message,true);}finally{e.target.value='';}};

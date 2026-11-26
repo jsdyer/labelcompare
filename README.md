@@ -4,6 +4,7 @@ A public browser tool for comparing food labels by barcode. [Open Label Compare]
 
 <!-- coolcode:guide -->
 Enter any food barcode to compare nutrition, including reported vitamins and minerals, ingredients and allergens. Inspect original label photos and additional product details. Switch between source-normalized 100 g/mL and each product’s own serving, then save a dated JSON receipt to reopen later; missing fields never become zero or an allergy-free claim.
+You can also transcribe actual receipts into a private dated price/package ledger, compare compatible unit prices over time, and export/import the same history in Basket Math or Label Compare. History is saved only on request.
 <!-- /coolcode:guide -->
 
 ## Use it
@@ -59,7 +60,7 @@ No API key or secret is needed for Open Food Facts **read** requests. The applic
 
 Open Food Facts asks app developers to create an app account and fill in its [API usage form](https://docs.google.com/forms/d/e/1FAIpQLSdIE3D8qvjC_zRJw1W8OmuHhsWJ_NSckiiniAHlfaVwUZCziQ/viewform). This is an owner setup task, not a visitor requirement, and no credentials belong in this repository. Suggested description: “Label Compare at https://coolcode.ca/labelcompare/ is a free public browser comparison of food nutrition, ingredients, reported allergens and missing data. Visitors request individual barcodes; responses are cached in the current tab, requests are spaced at least five seconds apart, and the tab budget is twelve reads per minute. No writes, advertising profiles or bulk crawling. Open Food Facts attribution and reuse licences are displayed and retained in receipts.”
 
-Only an explicitly looked-up barcode and ordinary connection information go to Open Food Facts. Product pictures are requested from its image service when displayed. Imports stay in the browser. No shopping history, health profile, account details, API keys or passwords are stored by Label Compare. Downloads are under the visitor’s control. Existing CoolCode aggregate visit counting follows the hub’s preferences.
+Only an explicitly looked-up barcode and ordinary connection information go to Open Food Facts. Product pictures are requested from its image service when displayed. Imports stay in the browser. No health profile, account details, API keys or passwords are stored. The optional receipt ledger stores purchase history on this device only when you select Save history. Downloads are under the visitor’s control. Existing CoolCode aggregate visit counting follows the hub’s preferences.
 
 ## Data sources and reuse
 
@@ -75,3 +76,9 @@ Related tools: [Canadian Price Atlas](https://coolcode.ca/priceatlas/) and [Pant
 ## Build and test
 
 Uses standard Python and browser JavaScript; no runtime dependencies. The default build is offline. CI runs the Node model tests, Python build/collector tests and a browser check at a project subpath, then publishes `dist/` to GitHub Pages. Browser tests intercept provider calls with retained real source responses, so external API availability cannot mask an application defect.
+
+## Receipt-backed price and package history
+
+Use the new history form to transcribe actual purchase records: comparison group, optional barcode, date, store, package quantity, purchased pack count, total paid, tax basis and optional evidence/promotion reference. Confirm the entry came from an actual receipt. No receipt images or personal payment data are uploaded. The tool normalizes compatible mass/volume/count units and compares the earliest/latest observations within the same group and tax basis. Smaller packages are labelled as recorded observations, not proof of a manufacturer-wide change; flavours, formats, stores and promotions can differ. Zero-price records do not produce misleading percentage increases.
+
+History is retained only on explicit Save, using `coolcode:labelcompare:receipt-history:v1`. Load, remove, clear, export and import are separate actions; removal from the current session does not overwrite stored history until saved. The JSON schema `coolcode-receipt-history-v1` is interoperable between Basket Math and Label Compare, validates up to 5,000 records and merges by record ID. This local history requires no API, key, schedule or Worker change.
